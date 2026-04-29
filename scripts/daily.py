@@ -8,7 +8,7 @@ import os, json, subprocess, datetime, sys, urllib.request, urllib.error
 PROJECT = os.environ.get("GITHUB_WORKSPACE", os.path.expanduser("~/claude projects/claude-voiceevals"))
 STATE   = os.path.join(PROJECT, "scripts", "daily_state.json")
 TO      = "rohitbchandrasekar@gmail.com"
-FROM    = "rhitbc@gmail.com"
+FROM    = "rohitbchandrasekar@gmail.com"
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -38,21 +38,16 @@ def state_set(s):
     json.dump(s, open(STATE, "w"))
 
 def send_email(subj, body, key):
-    import json as _j
-    payload = _j.dumps({
-        "personalizations": [{"to": [{"email": TO}]}],
-        "from": {"email": FROM, "name": "VoiceEvals Daily"},
-        "subject": subj,
-        "content": [{"type": "text/plain", "value": body}]
-    }).encode()
-    req = urllib.request.Request(
-        "https://api.sendgrid.com/v3/mail/send",
-        data=payload,
-        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-        method="POST"
-    )
+    import smtplib
+    from email.mime.text import MIMEText
+    msg = MIMEText(body)
+    msg["Subject"] = subj
+    msg["From"]    = FROM
+    msg["To"]      = TO
     try:
-        urllib.request.urlopen(req, timeout=10)
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            smtp.login(FROM, key)
+            smtp.sendmail(FROM, TO, msg.as_string())
         return True
     except Exception as e:
         print(f"Email error: {e}")
@@ -695,14 +690,14 @@ VoiceEvals was improved every day for 30 consecutive days.
 # ── main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    # Read SendGrid key from env var (GitHub Actions) or local file (fallback)
-    api_key = os.environ.get("SENDGRID_API_KEY", "").strip()
+    # Read Gmail app password from env var (GitHub Actions) or local file (fallback)
+    api_key = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
     if not api_key:
-        keyfile = os.path.expanduser("~/.sendgrid_key")
+        keyfile = os.path.expanduser("~/.gmail_app_pass")
         if os.path.exists(keyfile):
             api_key = open(keyfile).read().strip()
     if not api_key:
-        print("No SendGrid key found (set SENDGRID_API_KEY env var or ~/.sendgrid_key)")
+        print("No Gmail app password found (set GMAIL_APP_PASSWORD env var or ~/.gmail_app_pass)")
         sys.exit(1)
 
     s       = state_get()
