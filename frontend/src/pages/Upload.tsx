@@ -101,6 +101,7 @@ export default function UploadPage() {
 
       {/* File list */}
       <div className="space-y-3">
+        {/* total duration summary */}
         <h2 className="font-semibold text-lg">
           Files{" "}
           <span className="text-sm font-normal text-gray-400">({files.length})</span>
